@@ -105,6 +105,9 @@ RUN git clone \
     https://github.com/StableDiffusionVN/SDVN-training-colab-flux.git \
     ${SDVN_ROOT}
 
+COPY fix_torch_compile.sh /app/fix_torch_compile.sh
+RUN chmod +x /app/fix_torch_compile.sh
+
 WORKDIR ${SDVN_ROOT}
 
 RUN git submodule update --init --recursive
@@ -430,6 +433,8 @@ if [ -n "${AI_TOOLKIT_AUTH:-}" ]; then
 else
     echo "[AUTH] WARNING: AI_TOOLKIT_AUTH is not set."
 fi
+
+/app/fix_torch_compile.sh
 
 cd "${AITK_ROOT}/ui"
 export TORCHDYNAMO_VERBOSE=1
