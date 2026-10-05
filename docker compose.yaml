@@ -1,0 +1,17 @@
+mkdir -p models datasets outputs logs hf-cache
+touch aitk_db.db
+
+docker run -d \
+  --name sdvn-klein \
+  --gpus all \
+  -p 8675:8675 \
+  -e HF_TOKEN="hf_xxxxxxxxxxxxxxxxx" \
+  -e AI_TOOLKIT_AUTH="your-strong-password" \
+  -v "$(pwd)/models:/data/models" \
+  -v "$(pwd)/datasets:/data/datasets" \
+  -v "$(pwd)/outputs:/data/outputs" \
+  -v "$(pwd)/logs:/data/logs" \
+  -v "$(pwd)/hf-cache:/data/hf-cache" \
+  -v "$(pwd)/aitk_db.db:/app/SDVN-training-colab-flux/aitk_db.db" \
+  --shm-size=16g \
+  sdvn-klein:latest
