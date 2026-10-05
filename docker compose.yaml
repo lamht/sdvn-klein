@@ -1,6 +1,6 @@
 services:
   sdvn-klein:
-    image: sdvn-klein:latest
+    image: thanhlam00290/sdvn-klein:latest
     container_name: sdvn-klein
 
     gpus: all
