@@ -434,7 +434,7 @@ else
     echo "[AUTH] WARNING: AI_TOOLKIT_AUTH is not set."
 fi
 
-/app/fix_torch_compile.sh
+/app/fix_torch_compile.sh || true
 
 cd "${AITK_ROOT}/ui"
 export TORCHDYNAMO_VERBOSE=1
