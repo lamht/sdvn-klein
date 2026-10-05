@@ -13,8 +13,8 @@ services:
 
     volumes:
       - ./models:/data/models
-      - ./datasets:/data/datasets
-      - ./outputs:/data/outputs
+      - ./datasets:/app/SDVN-training-colab-flux/ai-toolkit/datasets
+      - ./outputs:/app/SDVN-training-colab-flux/ai-toolkit/output
       - ./logs:/data/logs
       - ./hf-cache:/data/hf-cache
       - ./aitk_db.db:/app/SDVN-training-colab-flux/aitk_db.db

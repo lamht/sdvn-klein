@@ -432,7 +432,8 @@ else
 fi
 
 cd "${AITK_ROOT}/ui"
-
+export TORCHDYNAMO_VERBOSE=1
+export TORCH_LOGS="+dynamo"
 # Do not use build_and_start here:
 # dependencies/build were already completed in Docker image.
 #

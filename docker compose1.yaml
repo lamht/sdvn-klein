@@ -1,3 +1,4 @@
+
 mkdir -p models datasets outputs logs hf-cache
 touch aitk_db.db
 
@@ -20,3 +21,27 @@ docker run -d \
   --add-host=host.docker.internal:host-gateway \
   cloudflare/cloudflared:latest \
   tunnel --no-autoupdate --url http://host.docker.internal:8675
+  AWSTemplateFormatVersion: "2010-09-09"
+/app/SDVN-training-colab-flux/ai-toolkit/extensions_built_in/diffusion_models/chroma/src/layers.py:651:            return torch.compile(_modulation_shift_scale_fn)(x, scale, shift)
+/app/SDVN-training-colab-flux/ai-toolkit/extensions_built_in/diffusion_models/chroma/src/layers.py:657:            return torch.compile(_modulation_gate_fn)(x, gate, gate_params)
+/app/SDVN-training-colab-flux/ai-toolkit/extensions_built_in/diffusion_models/chroma/src/layers.py:706:            return torch.compile(_modulation_shift_scale_fn)(x, scale, shift)
+/app/SDVN-training-colab-flux/ai-toolkit/extensions_built_in/captioner/BaseCaptioner.py:211:                    model.compile(dynamic=True)
+root@2167fbe090e0:/app/SDVN-training-colab-flux/ai-toolkit# cd /app/SDVN-training-colab-flux/ai-toolkit
+
+sed -i 's/^[[:space:]]*compile: true/      compile: false/' \
+  output/my_first_lora_v1/config.yaml
+
+sed -i 's/^[[:space:]]*block_compile: true/      block_compile: false/' \
+  output/my_first_lora_v1/config.yaml
+
+grep -nE 'compile|block_compile' output/my_first_lora_v1/config.yaml
+92:      compile: false
+93:      block_compile: false
+root@2167fbe090e0:/app/SDVN-training-colab-flux/ai-toolkit#
+
+/app/SDVN-training-colab-flux/ai-toolkit/output/my_first_lora_v1/config.yaml
+
+
+sudo mount --bind \
+  /app/SDVN-training-colab-flux/ai-toolkit/output \
+  /data/output
