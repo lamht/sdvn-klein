@@ -1,17 +1,51 @@
-mkdir -p models datasets outputs logs hf-cache
-touch aitk_db.db
+services:
+  sdvn-klein:
+    image: sdvn-klein:latest
+    container_name: sdvn-klein
 
-docker run -d \
-  --name sdvn-klein \
-  --gpus all \
-  -p 8675:8675 \
-  -e HF_TOKEN="hf_xxxxxxxxxxxxxxxxx" \
-  -e AI_TOOLKIT_AUTH="your-strong-password" \
-  -v "$(pwd)/models:/data/models" \
-  -v "$(pwd)/datasets:/data/datasets" \
-  -v "$(pwd)/outputs:/data/outputs" \
-  -v "$(pwd)/logs:/data/logs" \
-  -v "$(pwd)/hf-cache:/data/hf-cache" \
-  -v "$(pwd)/aitk_db.db:/app/SDVN-training-colab-flux/aitk_db.db" \
-  --shm-size=16g \
-  sdvn-klein:latest
+    gpus: all
+
+    ports:
+      - "8675:8675"
+
+    environment:
+      HF_TOKEN: "${HF_TOKEN}"
+
+    volumes:
+      - ./models:/data/models
+      - ./datasets:/data/datasets
+      - ./outputs:/data/outputs
+      - ./logs:/data/logs
+      - ./hf-cache:/data/hf-cache
+      - ./aitk_db.db:/app/SDVN-training-colab-flux/aitk_db.db
+
+    shm_size: "16g"
+
+    networks:
+      - sdvn-net
+
+    restart: unless-stopped
+
+  cloudflared-sdvn:
+    image: cloudflare/cloudflared:latest
+    container_name: cloudflared-sdvn
+
+    depends_on:
+      - sdvn-klein
+
+    command:
+      - tunnel
+      - --no-autoupdate
+      - --url
+      - http://sdvn-klein:8675
+
+    networks:
+      - sdvn-net
+
+    restart: unless-stopped
+
+
+networks:
+  sdvn-net:
+    name: sdvn-net
+    driver: bridge
