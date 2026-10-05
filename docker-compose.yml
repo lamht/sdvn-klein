@@ -43,6 +43,24 @@ services:
       - sdvn-net
 
     restart: unless-stopped
+  
+  # Cloudflare Tunnel riêng cho Filebrowser
+  cloudflared-filebrowser:
+    image: cloudflare/cloudflared:latest
+    container_name: cloudflared-filebrowser
+    command: tunnel --no-autoupdate --url http://filebrowser:80
+    restart: unless-stopped
+    depends_on:
+      - filebrowser
+  
+  filebrowser:
+    image: filebrowser/filebrowser:latest
+    container_name: filebrowser
+    ports:
+      - "8080:80"
+    volumes:
+      - ./:/srv
+    restart: unless-stopped
 
 
 networks:
