@@ -28,7 +28,7 @@ services:
 
   cloudflared-sdvn:
     image: cloudflare/cloudflared:latest
-    container_name: cloudflared-sdvn
+    container_name: cf-sdvn
 
     depends_on:
       - sdvn-klein
@@ -47,7 +47,7 @@ services:
   # Cloudflare Tunnel riêng cho Filebrowser
   cloudflared-filebrowser:
     image: cloudflare/cloudflared:latest
-    container_name: cloudflared-filebrowser
+    container_name: cf-filebrowser
     command: tunnel --no-autoupdate --url http://filebrowser:80
     restart: unless-stopped
     depends_on:
@@ -55,7 +55,7 @@ services:
   
   filebrowser:
     image: filebrowser/filebrowser:latest
-    container_name: filebrowser
+    container_name: sdvn-filebrowser
     ports:
       - "8080:80"
     volumes:
