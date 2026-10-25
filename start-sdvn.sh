@@ -40,9 +40,9 @@ PY
 
 cd "$UI_DIR"
 echo "--- Prisma ---"
-npx prisma generate
+npx --yes prisma generate -y
 touch "$AITK_DIR/aitk_db.db"
-npx prisma db push
+npx --yes prisma db push
 
 export NODE_ENV=production
 export PORT
