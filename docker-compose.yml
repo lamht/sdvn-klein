@@ -57,7 +57,7 @@ services:
     image: filebrowser/filebrowser:latest
     container_name: sdvn-filebrowser
     ports:
-      - "8080:80"
+      - "8081:80"
     volumes:
       - ./:/srv
     restart: unless-stopped
