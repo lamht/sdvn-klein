@@ -230,8 +230,7 @@ OUTPUT_ROOT="/data/outputs"
 LOG_ROOT="/data/logs"
 HF_HOME="/data/hf-cache"
 
-MODEL_REPO="black-forest-labs/FLUX.2-klein-base-9b-fp8"
-MODEL_FILE="flux-2-klein-base-9b-fp8.safetensors"
+MODEL_REPO="black-forest-labs/FLUX.2-klein-base-9b"
 
 STARTUP_LOG="${LOG_ROOT}/startup.log"
 MODEL_LOG="${LOG_ROOT}/model-download.log"
@@ -298,6 +297,72 @@ if torch.cuda.is_available():
 PY
 
 # ==========================================================
+# MODEL DOWNLOAD - BACKGROUND, BEFORE DATABASE/UI STARTUP
+# ==========================================================
+
+download_model() {
+    echo
+    echo "============================================================"
+    echo " BACKGROUND MODEL DOWNLOAD"
+    echo "============================================================"
+
+    if [ -z "${HF_TOKEN:-}" ]; then
+        echo "[MODEL] HF_TOKEN is not set."
+        echo "[MODEL] Skipping automatic download."
+        return 0
+    fi
+
+    (
+        set -Eeuo pipefail
+
+        echo "[MODEL] Started:"
+        date
+        echo "[MODEL] Repository: ${MODEL_REPO}"
+        echo "[MODEL] Hugging Face cache: ${HF_HOME}"
+
+        python - <<'PY'
+import os
+from huggingface_hub import login, snapshot_download
+
+token = os.environ.get("HF_TOKEN")
+if not token:
+    raise RuntimeError("HF_TOKEN is empty")
+
+login(token=token, add_to_git_credential=False)
+print("[MODEL] Authenticated with Hugging Face.")
+models = [
+    (
+        "Flux 2 Klein transformer",
+        "black-forest-labs/FLUX.2-klein-base-9b",
+        ["flux-2-klein-base-9b.safetensors"],
+    ),
+    ("Qwen3 text encoder", "Qwen/Qwen3-8B", None),
+    ("Flux 2 Klein VAE", "ai-toolkit/flux2_vae", ["ae.safetensors"]),
+]
+
+for name, repo, allow_patterns in models:
+    print(f"[MODEL] Prefetching {name}: {repo}", flush=True)
+    snapshot_download(
+        repo_id=repo,
+        token=token,
+        allow_patterns=allow_patterns,
+    )
+    print(f"[MODEL] Cached {name}.", flush=True)
+PY
+
+        echo
+        echo "[MODEL] Finished:"
+        date
+    ) >> "${MODEL_LOG}" 2>&1 &
+
+    MODEL_PID=$!
+    echo "[MODEL] Background PID: ${MODEL_PID}"
+    echo "[MODEL] Log: ${MODEL_LOG}"
+}
+
+download_model
+
+# ==========================================================
 # DATABASE
 # ==========================================================
 
@@ -332,88 +397,6 @@ echo "[PRISMA] prisma db push..."
 npx prisma db push
 
 echo "[PRISMA] Database ready."
-
-# ==========================================================
-# MODEL DOWNLOAD - BACKGROUND
-# ==========================================================
-
-download_model() {
-
-    echo
-    echo "============================================================"
-    echo " BACKGROUND MODEL DOWNLOAD"
-    echo "============================================================"
-
-    if [ -z "${HF_TOKEN:-}" ]; then
-        echo "[MODEL] HF_TOKEN is not set."
-        echo "[MODEL] Skipping automatic download."
-        echo "[MODEL] GUI will continue starting."
-        return 0
-    fi
-
-    (
-        set -Eeuo pipefail
-
-        echo "[MODEL] Started:"
-        date
-
-        echo "[MODEL] Repository:"
-        echo "${MODEL_REPO}"
-
-        echo "[MODEL] Destination:"
-        echo "${MODEL_ROOT}"
-
-        python - <<'PY'
-import os
-from pathlib import Path
-from huggingface_hub import snapshot_download
-
-repo = "black-forest-labs/FLUX.2-klein-base-9b-fp8"
-
-local_dir = Path("/data/models/flux-2-klein-base-9b-fp8")
-local_dir.mkdir(parents=True, exist_ok=True)
-
-token = os.environ.get("HF_TOKEN")
-
-if not token:
-    raise RuntimeError("HF_TOKEN is empty")
-
-print("[MODEL] Starting Hugging Face download...")
-print("[MODEL] repo =", repo)
-print("[MODEL] local_dir =", local_dir)
-
-snapshot_download(
-    repo_id=repo,
-    token=token,
-    local_dir=str(local_dir),
-    local_dir_use_symlinks=False,
-    resume_download=True,
-)
-
-print("[MODEL] Download complete.")
-PY
-
-        echo
-        echo "[MODEL] Files:"
-        find "${MODEL_ROOT}/flux-2-klein-base-9b-fp8" \
-            -maxdepth 2 \
-            -type f \
-            -printf "%p %s bytes\n" \
-            2>/dev/null || true
-
-        echo
-        echo "[MODEL] Finished:"
-        date
-
-    ) >> "${MODEL_LOG}" 2>&1 &
-
-    MODEL_PID=$!
-
-    echo "[MODEL] Background PID: ${MODEL_PID}"
-    echo "[MODEL] Log: ${MODEL_LOG}"
-}
-
-download_model
 
 # ==========================================================
 # GUI
