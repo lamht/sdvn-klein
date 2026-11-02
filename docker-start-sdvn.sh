@@ -80,30 +80,21 @@ if torch.cuda.is_available():
 PY
 
 # ==========================================================
-# MODEL DOWNLOAD - BACKGROUND, BEFORE DATABASE/UI STARTUP
+# MODEL DOWNLOAD - BACKGROUND, AFTER THE GUI RESPONDS
 # ==========================================================
 
 download_model() {
-    echo
-    echo "============================================================"
-    echo " BACKGROUND MODEL DOWNLOAD"
-    echo "============================================================"
-
     if [ -z "${HF_TOKEN:-}" ]; then
-        echo "[MODEL] HF_TOKEN is not set."
-        echo "[MODEL] Skipping automatic download."
-        return 0
+        echo "[MODEL] HF_TOKEN is not set; skipping automatic download."
+        return
     fi
 
-    (
-        set -Eeuo pipefail
+    echo "[MODEL] Started:"
+    date
+    echo "[MODEL] Repository: ${MODEL_REPO}"
+    echo "[MODEL] Hugging Face cache: ${HF_HOME}"
 
-        echo "[MODEL] Started:"
-        date
-        echo "[MODEL] Repository: ${MODEL_REPO}"
-        echo "[MODEL] Hugging Face cache: ${HF_HOME}"
-
-        python - <<'PY'
+    python - <<'PY'
 import os
 from huggingface_hub import login, snapshot_download
 
@@ -133,17 +124,34 @@ for name, repo, allow_patterns in models:
     print(f"[MODEL] Cached {name}.", flush=True)
 PY
 
-        echo
-        echo "[MODEL] Finished:"
-        date
+    echo
+    echo "[MODEL] Finished:"
+    date
+}
+
+start_model_download_after_gui() {
+    if [ -z "${HF_TOKEN:-}" ]; then
+        echo "[MODEL] HF_TOKEN is not set; skipping automatic download."
+        return
+    fi
+
+    (
+        set -Eeuo pipefail
+        echo "[MODEL] Waiting for the GUI to respond before downloading."
+        until curl --fail --silent --show-error --max-time 2 \
+            http://127.0.0.1:8675/ >/dev/null 2>&1
+        do
+            sleep 2
+        done
+
+        echo "[MODEL] GUI is responding; starting background prefetch."
+        download_model
     ) >> "${MODEL_LOG}" 2>&1 &
 
     MODEL_PID=$!
-    echo "[MODEL] Background PID: ${MODEL_PID}"
+    echo "[MODEL] GUI-ready download watcher PID: ${MODEL_PID}"
     echo "[MODEL] Log: ${MODEL_LOG}"
 }
-
-download_model
 
 # ==========================================================
 # DATABASE
@@ -209,4 +217,5 @@ export TORCH_LOGS="+dynamo"
 # dependencies/build were already completed in Docker image.
 #
 # Start worker + Next.js UI.
+start_model_download_after_gui
 exec npm run start
